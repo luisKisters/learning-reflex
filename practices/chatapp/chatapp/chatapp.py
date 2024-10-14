@@ -3,13 +3,15 @@
 import reflex as rx
 
 from rxconfig import config
+from chatapp import style
 
 
 def qa(question: str, answer: str) -> rx.Component:
     return rx.box(
-        rx.box(question, text_align="right"),
-        rx.box(answer, text_align="left"),
+        rx.box(question, style=style.question_style, text_align="right"),
+        rx.box(answer, style=style.answer_style, text_align="left"),
         margin_y="1em",
+        width="100%",
     )
 
 
@@ -29,6 +31,13 @@ def chat() -> rx.Component:
     return rx.box(*[qa(question, answer) for question, answer in qa_pairs])
 
 
+def action_bar():
+    return rx.hstack(
+        rx.input(placeholder="What is your question?", style=style.input_style),
+        rx.button("Ask", style=style.button_style),
+    )
+
+
 class State(rx.State):
     """The app state."""
 
@@ -36,7 +45,7 @@ class State(rx.State):
 
 
 def index() -> rx.Component:
-    return rx.container(chat())
+    return rx.center(rx.vstack(chat(), action_bar(), align="center"))
 
 
 app = rx.App()
