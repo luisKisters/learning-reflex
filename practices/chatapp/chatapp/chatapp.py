@@ -2,51 +2,84 @@
 
 import reflex as rx
 
-from rxconfig import config
-from chatapp import style
+import time
+from pages import chatapp_doc_example
 
 
-def qa(question: str, answer: str) -> rx.Component:
+class State(rx.State):
+    msg_content: str
+    username: str
+    # chat_history: list[
+    #     dict["msg":str, "user":str, "date":str]
+    # ]  # TODO: CONVERT THIS TO A FKN DICT RIGHT?
+    chat_history: list[dict[str, str, str]]
+
+    def send_msg(self, msg, usr):
+        date = time.strftime("%Y-%m-%d %H:%M:%S")
+        # self.chat_history.append("msg": msg, "user": usr, "date": date)
+        if msg == "" or usr == "":
+            yield rx.toast("Message or Sender is  empty")
+        else:
+            self.chat_history.append({"msg": msg, "user": usr, "date": date})
+            print("message send")
+            # print("msg:", self.msg_content, self.username)
+            print({"msg": msg, "user": usr, "date": date})
+            print("current chat history")
+            self.msg_content = ""
+            print(self.msg_content)
+            yield
+        # self.username = ""
+
+
+def chat() -> rx.Component:
     return rx.box(
-        rx.box(question, style=style.question_style, text_align="right"),
-        rx.box(answer, style=style.answer_style, text_align="left"),
-        margin_y="1em",
+        # rx.text(State.chat_history),
+        rx.foreach(State.chat_history, lambda msg: chat_msg(msg)),
+        input(),
+    )
+    # result: [["test msg","test sender","2024-10-14 19:39:15"],["","test sender","2024-10-14 19:39:17"],["","test sender","2024-10-14 19:39:17"],["","test sender","2024-10-14 19:39:17"],["","test sender","2024-10-14 19:39:17"],["","test sender","2024-10-14 19:39:18"],["","test sender","2024-10-14 19:39:18"],["","test sender","2024-10-14 19:40:03"],["test msgasdasdsad","test sender","2024-10-14 19:40:08"]]
+
+
+def chat_msg(msg: dict[str, str, str]) -> rx.Component:
+    return rx.box(
+        rx.hstack(
+            rx.box(
+                rx.text(
+                    msg["msg"],
+                    background_color=rx.cond(
+                        msg["user"] == State.username,
+                        "blue",
+                        "green",
+                    ),
+                    padding="12px",
+                    border_radius="10px",
+                ),
+                rx.flex(rx.text(msg["user"]), rx.text(msg["date"]), spacing="3"),
+            ),
+        )
+    )
+
+
+def input() -> rx.Component:
+    return rx.hstack(
+        rx.input(
+            "Write a message",
+            on_change=State.set_msg_content,
+            value=State.msg_content,
+        ),
+        rx.input("Input username", on_change=State.set_username, value=State.username),
+        rx.button(
+            "Submit Message",
+            on_click=lambda: State.send_msg(State.msg_content, State.username),
+        ),
         width="100%",
     )
 
 
-def chat() -> rx.Component:
-    qa_pairs = [
-        ("What is reflex?", "A way to build web apps in pure python!"),
-        (
-            "What can I make with it?",
-            "Anything simple from a simple website to a complex web app!",
-        ),
-        (
-            "How do you advertise a thing you build?",
-            "By constantly advertising it in the docs!",
-        ),
-    ]
-
-    return rx.box(*[qa(question, answer) for question, answer in qa_pairs])
-
-
-def action_bar():
-    return rx.hstack(
-        rx.input(placeholder="What is your question?", style=style.input_style),
-        rx.button("Ask", style=style.button_style),
-    )
-
-
-class State(rx.State):
-    """The app state."""
-
-    ...
-
-
 def index() -> rx.Component:
-    return rx.center(rx.vstack(chat(), action_bar(), align="center"))
+    return rx.hstack(chat())
 
 
 app = rx.App()
+app.add_page(chatapp_doc_example.chatapp)
 app.add_page(index)
